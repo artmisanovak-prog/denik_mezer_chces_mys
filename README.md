@@ -7,5 +7,5 @@
 
 ---
 
-[karty](doma/data/karty.json)
-[ikonka](doma/ilustrace/ikonka_mys.png)
+- [karty](doma/data/karty.json)
+- [ikonka](doma/ilustrace/mys_ikonka.png)
