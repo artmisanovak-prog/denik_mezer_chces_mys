@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zápisník – Mytodeník</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0f0f0f;
+            color: #e8e0d0;
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            padding: 20px;
+        }
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 1.8rem;
+        }
+        .back-link {
+            color: #a89880;
+            text-decoration: none;
+            font-size: 11px;
+        }
+        .cards {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+        }
+        .card {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            background: #0f0f0f;
+            padding: 12px;
+        }
+        .card img {
+            max-width: 100%;
+            height: auto;
+            background: #2a2a2a;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .card .name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .card .snippet {
+            font-size: 10px;
+            color: #a89880;
+        }
+        textarea {
+            width: 100%;
+            background: #1c1c1c;
+            border: 1px solid #2a2a2a;
+            color: #e8e0d0;
+            padding: 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 280px;
+            margin: 16px 0;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        button {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #e8e0d0;
+            padding: 8px 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #3a3a3a;
+            border-color: #a89880;
+        }
+        .history {
+            margin-top: 32px;
+            border-top: 1px solid #2a2a2a;
+            padding-top: 20px;
+        }
+        .history h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            font-weight: 300;
+        }
+        .history-item {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .history-info {
+            flex: 1;
+        }
+        .history-title {
+            font-weight: bold;
+        }
+        .history-date {
+            font-size: 10px;
+            color: #a89880;
+        }
+        .history-cards {
+            font-size: 10px;
+            margin-top: 4px;
+        }
+        .history-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .status {
+            margin-top: 12px;
+            padding: 6px;
+            background: #1a1a1a;
+            font-size: 11px;
+            text-align: center;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #555;
+        }
+        @media (max-width: 700px) {
+            .cards { flex-direction: column; }
+            .history-item { flex-direction: column; align-items: flex-start; }
+            .history-actions { margin-top: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <h1>✎ Zápisník</h1>
+        <a href="index.html" class="back-link">← zpět na úvod</a>
+    </header>
+
+    <div id="cardsContainer" class="cards">
+        <div class="card">Načítám karty...</div>
+    </div>
+
+    <textarea id="entryText" placeholder="Napiš cokoliv – příběh, vzpomínku, absurditu. Karty tě můžou inspirovat."></textarea>
+
+    <div class="btn-group">
+        <button id="saveBtn">💾 Uložit jako novou verzi</button>
+        <button id="analyzeBtn">🔍 Analyzovat v analyzátoru</button>
+        <button id="newEntryBtn">✨ Nový zápis</button>
+    </div>
+
+    <div class="history">
+        <h2>📂 Historie verzí</h2>
+        <div id="historyList">Zatím žádné uložené zápisy.</div>
+    </div>
+    <div id="statusMsg" class="status"></div>
+    <footer>Každé uložení vytvoří novou verzi. Zaškrtni "Do knihy" u verze, kterou chceš později vydat. Odkaz na stejné karty: do URL přidej <code>?karty=nazev1,nazev2,nazev3</code></footer>
+</div>
+
+<script>
+    // =============================================
+    // SEZNAM KARET (66 – zde ukázka 9, doplň své)
+    // Cesta k obrázkům: doma/ilustrace/nazev.jpg
+    // =============================================
+    const CARDS = [
+        { name: "Myš", image: "doma/ilustrace/mys.jpg", snippet: "chceš myš ??" },
+        { name: "Motýl", image: "doma/ilustrace/motyl.jpg", snippet: "motýlů v břiše se nenajíš" },
+        { name: "Krokodýl", image: "doma/ilustrace/krokodyl.jpg", snippet: "tento týden sleva 90%" },
+        { name: "Parohy", image: "doma/ilustrace/parohy.jpg", snippet: "1000x blesk nikdy hrom" },
+        { name: "Osel", image: "doma/ilustrace/osel.jpg", snippet: "levá pravá seno sláma" },
+        { name: "Žížala", image: "doma/ilustrace/zizala.jpg", snippet: "Rozklad jako růst" },
+        { name: "Ryba", image: "doma/ilustrace/ryba.jpg", snippet: "rybí rap" },
+        { name: "Zrcadlo", image: "doma/ilustrace/zrcadlo.jpg", snippet: "zrcadlo vidí, co ty nechceš" },
+        { name: "Hranice", image: "doma/ilustrace/hranice.jpg", snippet: "kdo ji překročí, ztratí jméno" }
+    ];
+
+    // Pomocná funkce pro náhodný výběr 3 různých karet
+    function getRandomCards(count = 3) {
+        const shuffled = [...CARDS];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, count);
+    }
+
+    // Načtení karet z URL parametru ?karty=name1,name2,name3
+    function getCardsFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const cardNames = params.get('karty');
+        if (cardNames) {
+            const names = cardNames.split(',').map(s => s.trim());
+            const selected = [];
+            for (let name of names) {
+                const card = CARDS.find(c => c.name.toLowerCase() === name.toLowerCase());
+                if (card) selected.push(card);
+            }
+            if (selected.length === 3) return selected;
+        }
+        return null;
+    }
+
+    let currentCards = [];
+
+    function renderCards(cards) {
+        const container = document.getElementById('cardsContainer');
+        if (!cards || cards.length === 0) {
+            container.innerHTML = '<div class="card">Chyba: žádné karty</div>';
+            return;
+        }
+        let html = '';
+        for (let card of cards) {
+            html += `
+                <div class="card">
+                    <img src="${card.image}" alt="${card.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%23222\'/%3E%3Ctext x=\'50\' y=\'50\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23888\'%3E?%3C/text%3E%3C/svg%3E'">
+                    <div class="name">${escapeHtml(card.name)}</div>
+                    <div class="snippet">${escapeHtml(card.snippet)}</div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    // Ukládání verzí do localStorage
+    function loadEntries() {
+        const stored = localStorage.getItem('mytodenik_entries');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveEntries(entries) {
+        localStorage.setItem('mytodenik_entries', JSON.stringify(entries));
+    }
+
+    function saveCurrentVersion() {
+        const text = document.getElementById('entryText').value.trim();
+        if (!text) {
+            showStatus('Napiš něco před uložením.', true);
+            return;
+        }
+        const entries = loadEntries();
+        const newVersion = {
+            id: Date.now(),
+            date: new Date().toLocaleString(),
+            text: text,
+            cards: currentCards.map(c => ({ name: c.name, snippet: c.snippet })),
+            inBook: false      // prozatím nezaškrtnuto
+        };
+        entries.unshift(newVersion);
+        saveEntries(entries);
+        renderHistory();
+        showStatus('Verze uložena.', false);
+    }
+
+    function renderHistory() {
+        const entries = loadEntries();
+        const container = document.getElementById('historyList');
+        if (entries.length === 0) {
+            container.innerHTML = 'Zatím žádné uložené zápisy.';
+            return;
+        }
+        let html = '';
+        for (let entry of entries) {
+            const cardsPreview = entry.cards.map(c => c.name).join(', ');
+            html += `
+                <div class="history-item" data-id="${entry.id}">
+                    <div class="history-info">
+                        <div class="history-title">${escapeHtml(entry.date)}</div>
+                        <div class="history-cards">🎴 ${escapeHtml(cardsPreview)}</div>
+                        <div class="history-text-preview">${escapeHtml(entry.text.substring(0, 100))}${entry.text.length > 100 ? '…' : ''}</div>
+                        <label style="font-size:11px; margin-top:4px; display:inline-block;">
+                            <input type="checkbox" class="inbook-checkbox" data-id="${entry.id}" ${entry.inBook ? 'checked' : ''}> Do knihy
+                        </label>
+                    </div>
+                    <div class="history-actions">
+                        <button class="loadBtn" data-id="${entry.id}">📂 Načíst</button>
+                        <button class="deleteBtn" data-id="${entry.id}">🗑 Smazat</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+
+        // Eventy pro načtení a smazání
+        document.querySelectorAll('.loadBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                const entry = loadEntries().find(e => e.id === id);
+                if (entry) {
+                    document.getElementById('entryText').value = entry.text;
+                    showStatus(`Načtena verze z ${entry.date}`, false);
+                }
+            });
+        });
+        document.querySelectorAll('.deleteBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                let entries = loadEntries();
+                entries = entries.filter(e => e.id !== id);
+                saveEntries(entries);
+                renderHistory();
+                showStatus('Verze smazána.', false);
+            });
+        });
+        document.querySelectorAll('.inbook-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const id = parseInt(cb.getAttribute('data-id'));
+                let entries = loadEntries();
+                const entry = entries.find(e => e.id === id);
+                if (entry) {
+                    entry.inBook = cb.checked;
+                    saveEntries(entries);
+                    showStatus(`Verze ${entry.inBook ? 'přidána do' : 'odebrána z'} knihy.`, false);
+                }
+            });
+        });
+    }
+
+    function showStatus(msg, isError) {
+        const div = document.getElementById('statusMsg');
+        div.textContent = msg;
+        div.style.background = isError ? '#3a1a1a' : '#1a3a1a';
+        setTimeout(() => {
+            div.textContent = '';
+            div.style.background = '';
+        }, 3000);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function newEntry() {
+        const currentText = document.getElementById('entryText').value.trim();
+        if (currentText) {
+            if (confirm('Uložit současný text před novým zápisem?')) {
+                saveCurrentVersion();
+            }
+        }
+        // Nové náhodné karty (nebo z URL)
+        const urlCards = getCardsFromUrl();
+        if (urlCards) {
+            currentCards = urlCards;
+        } else {
+            currentCards = getRandomCards(3);
+        }
+        renderCards(currentCards);
+        document.getElementById('entryText').value = '';
+        showStatus('Nový zápis připraven.', false);
+    }
+
+    function analyzeCurrent() {
+        const text = document.getElementById('entryText').value.trim();
+        if (!text) {
+            showStatus('Napiš nejprve něco.', true);
+            return;
+        }
+        // Předpokládáme, že analyzátor je v doma/nastroje/analyzer.html a umí parametr ?text=
+        const analyzerUrl = 'doma/nastroje/analyzer.html';
+        const encoded = encodeURIComponent(text);
+        window.open(`${analyzerUrl}?text=${encoded}`, '_blank');
+    }
+
+    // Inicializace
+    function init() {
+        const urlCards = getCardsFromUrl();
+        if (urlCards) {
+            currentCards = urlCards;
+        } else {
+            currentCards = getRandomCards(3);
+        }
+        renderCards(currentCards);
+        renderHistory();
+        document.getElementById('saveBtn').addEventListener('click', saveCurrentVersion);
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeCurrent);
+        document.getElementById('newEntryBtn').addEventListener('click', newEntry);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
