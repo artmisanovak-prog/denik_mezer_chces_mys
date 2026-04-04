@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kniha – Mytodeník</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #fefefe;
+            color: #111;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 12px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+        .back-link {
+            color: #555;
+            text-decoration: none;
+            font-family: monospace;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            font-weight: normal;
+            border-left: 3px solid #333;
+            padding-left: 10px;
+        }
+        .entry-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            background: #fafafa;
+        }
+        .entry-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .entry-item input {
+            margin-top: 3px;
+        }
+        .entry-info {
+            flex: 1;
+        }
+        .entry-date {
+            font-size: 11px;
+            color: #666;
+            font-family: monospace;
+        }
+        .entry-preview {
+            font-size: 12px;
+            color: #333;
+        }
+        .entry-cards {
+            font-size: 10px;
+            color: #888;
+        }
+        .btn {
+            background: #fff;
+            border: 1px solid #aaa;
+            padding: 8px 16px;
+            font-family: monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .btn:hover {
+            background: #eee;
+            border-color: #333;
+        }
+        input, select, textarea {
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .book-list {
+            border-top: 1px solid #ccc;
+            margin-top: 30px;
+            padding-top: 20px;
+        }
+        .book-item {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .preview-content {
+            background: white;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .hidden { display: none; }
+        .book-preview-page {
+            margin-bottom: 30px;
+            page-break-after: always;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 20px;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 11px;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .style-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .style-preview {
+            background: #f0f0f0;
+            padding: 6px 12px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            font-size: 11px;
+        }
+        .style-preview.selected {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <h1>📖 Knihy</h1>
+        <a href="zapisnik.html" class="back-link">← zpět do zápisníku</a>
+    </header>
+
+    <div class="grid-2">
+        <!-- Levá část: výběr verzí a vytvoření nové knihy -->
+        <div class="card">
+            <h2>✎ Vytvořit novou knihu</h2>
+            <label>Název knihy</label>
+            <input type="text" id="newBookName" placeholder="např. Mytologie roku 2025, Třída 4.A, Sny a vzpomínky...">
+            
+            <label>Styl (šablona)</label>
+            <div class="style-selector" id="styleSelector"></div>
+            <input type="hidden" id="selectedStyle" value="style1">
+            
+            <label>Vyber verze ze zápisníku (zaškrtni, co chceš do knihy)</label>
+            <div id="entriesForBook" class="entry-list">Načítám...</div>
+            
+            <button id="createBookBtn" class="btn">📗 Uložit jako novou knihu</button>
+        </div>
+
+        <!-- Pravá část: seznam existujících knih -->
+        <div class="card">
+            <h2>📚 Existující knihy</h2>
+            <div id="savedBooksList">Načítám...</div>
+        </div>
+    </div>
+
+    <footer>
+        Každá kniha ukládá pouze ID verzí. Verze zůstávají v zápisníku. Můžeš mít neomezeně knih.
+    </footer>
+</div>
+
+<!-- Modal pro náhled knihy -->
+<div id="previewModal" class="preview-modal hidden">
+    <div class="preview-content">
+        <h2 id="previewTitle"></h2>
+        <div id="previewPages"></div>
+        <div style="margin-top: 20px; text-align: right;">
+            <button id="closePreviewBtn" class="btn">Zavřít</button>
+            <button id="exportHtmlBtn" class="btn">⬇ Uložit jako HTML</button>
+            <button id="printPdfBtn" class="btn">🖨 Tisknout / PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =============================================
+    // KONSTANTY
+    // =============================================
+    const STORAGE_ENTRIES_KEY = 'mytodenik_entries';
+    const STORAGE_BOOKS_KEY = 'mytodenik_books';
+
+    // 12 černobílých stylů (šablon) – každý je CSS text, který se vloží do náhledu
+    const STYLES = {
+        style1: `body { font-family: Georgia, serif; line-height: 1.6; max-width: 700px; margin: 0 auto; padding: 2rem; } h1 { font-size: 2rem; } .page { margin-bottom: 3rem; page-break-after: always; }`,
+        style2: `body { font-family: 'Courier New', monospace; line-height: 1.5; max-width: 600px; margin: 0 auto; padding: 1.5rem; } h1 { font-size: 1.5rem; text-transform: uppercase; } .page { margin-bottom: 2rem; }`,
+        style3: `body { font-family: 'Times New Roman', serif; line-height: 1.8; max-width: 800px; margin: 0 auto; padding: 2rem; text-align: justify; } h1 { font-size: 2.2rem; font-variant: small-caps; } .page { margin-bottom: 2rem; }`,
+        style4: `body { font-family: 'Verdana', sans-serif; line-height: 1.5; max-width: 650px; margin: 0 auto; padding: 1rem; } h1 { font-size: 1.3rem; border-bottom: 1px solid #000; } .page { margin-bottom: 2rem; }`,
+        style5: `body { font-family: 'Garamond', serif; line-height: 1.7; max-width: 550px; margin: 0 auto; padding: 2rem; } h1 { font-size: 1.8rem; font-style: italic; } .page { margin-bottom: 2rem; }`,
+        style6: `body { font-family: 'Arial', sans-serif; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 1rem; } h1 { font-size: 1.4rem; letter-spacing: 2px; } .page { margin-bottom: 1.5rem; }`,
+        style7: `body { font-family: 'Book Antiqua', serif; line-height: 1.6; max-width: 750px; margin: 0 auto; padding: 2rem; } h1 { font-size: 1.6rem; text-align: center; } .page { margin-bottom: 2rem; }`,
+        style8: `body { font-family: 'Consolas', monospace; line-height: 1.5; max-width: 650px; margin: 0 auto; padding: 1rem; } h1 { font-size: 1.2rem; text-transform: uppercase; } .page { margin-bottom: 2rem; }`,
+        style9: `body { font-family: 'Georgia', serif; line-height: 1.9; max-width: 600px; margin: 0 auto; padding: 2rem; background: #fefefe; } h1 { font-size: 1.7rem; font-weight: normal; } .page { margin-bottom: 3rem; }`,
+        style10: `body { font-family: 'Trebuchet MS', sans-serif; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 1rem; } h1 { font-size: 1.5rem; border-left: 4px solid #000; padding-left: 10px; } .page { margin-bottom: 2rem; }`,
+        style11: `body { font-family: 'Palatino', serif; line-height: 1.7; max-width: 600px; margin: 0 auto; padding: 2rem; } h1 { font-size: 1.6rem; text-align: center; letter-spacing: 2px; } .page { margin-bottom: 2rem; }`,
+        style12: `body { font-family: 'Monaco', monospace; line-height: 1.5; max-width: 700px; margin: 0 auto; padding: 1rem; } h1 { font-size: 1.2rem; text-decoration: underline; } .page { margin-bottom: 2rem; }`
+    };
+    const STYLE_NAMES = {
+        style1: 'Klasická (serif)',
+        style2: 'Strojopis (mono)',
+        style3: 'Novinová (široká)',
+        style4: 'Moderní (sans)',
+        style5: 'Italská (kurzíva)',
+        style6: 'Striktní (Arial)',
+        style7: 'Slavnostní (střed)',
+        style8: 'Kód (Consolas)',
+        style9: 'Esej (Georgia)',
+        style10: 'Akademická (pruh)',
+        style11: 'Poetická (Palatino)',
+        style12: 'Strohá (Monaco)'
+    };
+
+    // =============================================
+    // POMOCNÉ FUNKCE
+    // =============================================
+    function loadEntries() {
+        const stored = localStorage.getItem(STORAGE_ENTRIES_KEY);
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveEntries(entries) {
+        localStorage.setItem(STORAGE_ENTRIES_KEY, JSON.stringify(entries));
+    }
+
+    function loadBooks() {
+        const stored = localStorage.getItem(STORAGE_BOOKS_KEY);
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveBooks(books) {
+        localStorage.setItem(STORAGE_BOOKS_KEY, JSON.stringify(books));
+    }
+
+    // Zobrazení seznamu verzí pro výběr do knihy (zaškrtávací)
+    function renderEntriesSelector() {
+        const entries = loadEntries();
+        const container = document.getElementById('entriesForBook');
+        if (entries.length === 0) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center;">Zatím žádné verze v zápisníku.</div>';
+            return;
+        }
+        let html = '';
+        entries.forEach(entry => {
+            const preview = entry.text.substring(0, 80).replace(/\n/g, ' ');
+            const cardsStr = entry.cards.map(c => c.name).join(', ');
+            html += `
+                <div class="entry-item">
+                    <input type="checkbox" class="entry-checkbox" data-id="${entry.id}">
+                    <div class="entry-info">
+                        <div class="entry-date">${escapeHtml(entry.date)}</div>
+                        <div class="entry-cards">🎴 ${escapeHtml(cardsStr)}</div>
+                        <div class="entry-preview">${escapeHtml(preview)}${entry.text.length > 80 ? '…' : ''}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // Získání ID vybraných verzí
+    function getSelectedEntryIds() {
+        const checkboxes = document.querySelectorAll('.entry-checkbox:checked');
+        return Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-id')));
+    }
+
+    // Zobrazení seznamu knih (s akcemi)
+    function renderBooksList() {
+        const books = loadBooks();
+        const container = document.getElementById('savedBooksList');
+        if (books.length === 0) {
+            container.innerHTML = '<div style="padding: 20px; text-align: center;">Žádné uložené knihy. Vytvoř první výše.</div>';
+            return;
+        }
+        let html = '';
+        books.forEach((book, idx) => {
+            const entryCount = book.entryIds.length;
+            html += `
+                <div class="book-item">
+                    <div>
+                        <strong>${escapeHtml(book.name)}</strong><br>
+                        <span style="font-size: 11px; color: #555;">${entryCount} verzí · styl: ${STYLE_NAMES[book.style] || book.style} · vytvořeno: ${book.created}</span>
+                    </div>
+                    <div>
+                        <button class="btn openBookBtn" data-index="${idx}" style="font-size: 10px;">📖 Otevřít</button>
+                        <button class="btn editBookBtn" data-index="${idx}" style="font-size: 10px;">✎ Upravit</button>
+                        <button class="btn deleteBookBtn" data-index="${idx}" style="font-size: 10px;">🗑 Smazat</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+
+        // Eventy pro tlačítka knih
+        document.querySelectorAll('.openBookBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                const books = loadBooks();
+                if (books[idx]) showBookPreview(books[idx]);
+            });
+        });
+        document.querySelectorAll('.editBookBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                editBook(idx);
+            });
+        });
+        document.querySelectorAll('.deleteBookBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                if (confirm('Opravdu smazat tuto knihu?')) {
+                    let books = loadBooks();
+                    books.splice(idx, 1);
+                    saveBooks(books);
+                    renderBooksList();
+                }
+            });
+        });
+    }
+
+    // Vytvoření nové knihy
+    function createBook() {
+        const name = document.getElementById('newBookName').value.trim();
+        if (!name) {
+            alert('Zadej název knihy.');
+            return;
+        }
+        const selectedIds = getSelectedEntryIds();
+        if (selectedIds.length === 0) {
+            alert('Vyber alespoň jednu verzi ze zápisníku.');
+            return;
+        }
+        const style = document.getElementById('selectedStyle').value;
+        const books = loadBooks();
+        const newBook = {
+            id: Date.now(),
+            name: name,
+            style: style,
+            entryIds: selectedIds,
+            created: new Date().toLocaleString(),
+            modified: new Date().toLocaleString()
+        };
+        books.push(newBook);
+        saveBooks(books);
+        renderBooksList();
+        // Zrušit zaškrtnutí
+        document.querySelectorAll('.entry-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('newBookName').value = '';
+        alert(`Kniha "${name}" uložena.`);
+    }
+
+    // Upravit existující knihu (znovu vybrat verze, změnit název, styl)
+    function editBook(index) {
+        const books = loadBooks();
+        const book = books[index];
+        if (!book) return;
+        // Načíst aktuální verze
+        const allEntries = loadEntries();
+        const selectedIdsSet = new Set(book.entryIds);
+        // Zobrazit dialog (jednoduchý modal, ale uděláme přes prompt + nový výběr)
+        const newName = prompt('Nový název knihy:', book.name);
+        if (newName === null) return;
+        // Vybrat styl
+        let styleKeys = Object.keys(STYLES);
+        let styleOptions = styleKeys.map((k,i) => `${i+1}: ${STYLE_NAMES[k]}`).join('\n');
+        let newStyleKey = prompt(`Vyber styl (zadej číslo 1-12):\n${styleOptions}`, styleKeys.indexOf(book.style)+1);
+        let newStyle = book.style;
+        if (newStyleKey && !isNaN(parseInt(newStyleKey))) {
+            let idx = parseInt(newStyleKey)-1;
+            if (idx >=0 && idx < styleKeys.length) newStyle = styleKeys[idx];
+        }
+        // Nyní znovu vybrat verze – otevřeme jednoduchý list s checkboxes
+        let entryListHtml = '<div style="max-height:300px; overflow-y:auto;">';
+        allEntries.forEach(entry => {
+            entryListHtml += `
+                <div style="margin-bottom: 6px;">
+                    <label>
+                        <input type="checkbox" class="temp-check" data-id="${entry.id}" ${selectedIdsSet.has(entry.id) ? 'checked' : ''}>
+                        ${escapeHtml(entry.date)} - ${escapeHtml(entry.text.substring(0,60))}
+                    </label>
+                </div>
+            `;
+        });
+        entryListHtml += '</div><button id="confirmEditBtn">Uložit změny</button>';
+        const modalDiv = document.createElement('div');
+        modalDiv.style.position = 'fixed'; modalDiv.style.top='0'; modalDiv.style.left='0'; modalDiv.style.width='100%'; modalDiv.style.height='100%'; modalDiv.style.background='rgba(0,0,0,0.8)'; modalDiv.style.display='flex'; modalDiv.style.justifyContent='center'; modalDiv.style.alignItems='center'; modalDiv.style.zIndex='2000';
+        const innerDiv = document.createElement('div');
+        innerDiv.style.background = 'white'; innerDiv.style.padding = '20px'; innerDiv.style.maxWidth = '500px'; innerDiv.style.maxHeight = '80%'; innerDiv.style.overflow = 'auto';
+        innerDiv.innerHTML = `<h3>Vyber verze pro knihu "${newName}"</h3>${entryListHtml}`;
+        modalDiv.appendChild(innerDiv);
+        document.body.appendChild(modalDiv);
+        const confirmBtn = innerDiv.querySelector('#confirmEditBtn');
+        confirmBtn.onclick = () => {
+            const selected = Array.from(innerDiv.querySelectorAll('.temp-check:checked')).map(cb => parseInt(cb.getAttribute('data-id')));
+            if (selected.length === 0) {
+                alert('Musíš vybrat alespoň jednu verzi.');
+                return;
+            }
+            book.name = newName;
+            book.style = newStyle;
+            book.entryIds = selected;
+            book.modified = new Date().toLocaleString();
+            books[index] = book;
+            saveBooks(books);
+            renderBooksList();
+            document.body.removeChild(modalDiv);
+        };
+    }
+
+    // Zobrazení náhledu knihy (stránkované, dle stylu)
+    function showBookPreview(book) {
+        const allEntries = loadEntries();
+        const entriesMap = new Map();
+        allEntries.forEach(e => entriesMap.set(e.id, e));
+        const selectedEntries = book.entryIds.map(id => entriesMap.get(id)).filter(e => e);
+        if (selectedEntries.length === 0) {
+            alert('V této knize nejsou žádné verze (byly smazány ze zápisníku).');
+            return;
+        }
+        const styleCss = STYLES[book.style] || STYLES.style1;
+        let pagesHtml = '';
+        selectedEntries.forEach((entry, idx) => {
+            const cardsHtml = entry.cards ? entry.cards.map(c => `<span style="display:inline-block; background:#f0f0f0; padding:2px 6px; margin:2px; font-size:10px;">${escapeHtml(c.name)}</span>`).join(' ') : '';
+            pagesHtml += `
+                <div class="page">
+                    <h3>${escapeHtml(entry.date)}</h3>
+                    ${cardsHtml ? `<div style="margin-bottom: 10px;">🎴 ${cardsHtml}</div>` : ''}
+                    <div style="white-space: pre-wrap;">${escapeHtml(entry.text)}</div>
+                    <hr style="margin-top: 20px;">
+                </div>
+            `;
+        });
+        const fullHtml = `<!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>${escapeHtml(book.name)}</title><style>${styleCss} .page { margin-bottom: 2rem; page-break-after: always; } hr { display: none; }</style></head>
+        <body><h1>${escapeHtml(book.name)}</h1>${pagesHtml}</body>
+        </html>`;
+        
+        const modal = document.getElementById('previewModal');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewPages = document.getElementById('previewPages');
+        previewTitle.innerText = book.name;
+        previewPages.innerHTML = pagesHtml; // jednoduché zobrazení bez stylu, ale pro náhled v modu stačí
+        modal.classList.remove('hidden');
+        
+        // Uložení HTML
+        document.getElementById('exportHtmlBtn').onclick = () => {
+            const blob = new Blob([fullHtml], {type: 'text/html'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${book.name.replace(/[^a-z0-9]/gi, '_')}.html`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        };
+        document.getElementById('printPdfBtn').onclick = () => {
+            const win = window.open();
+            win.document.write(fullHtml);
+            win.document.close();
+            win.print();
+        };
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Vykreslení výběru stylů
+    function renderStyleSelector() {
+        const container = document.getElementById('styleSelector');
+        let html = '';
+        Object.keys(STYLES).forEach((key, idx) => {
+            html += `<div class="style-preview" data-style="${key}">${STYLE_NAMES[key]}</div>`;
+        });
+        container.innerHTML = html;
+        // Označit první jako vybraný
+        document.getElementById('selectedStyle').value = 'style1';
+        document.querySelectorAll('.style-preview').forEach(div => {
+            div.addEventListener('click', () => {
+                document.querySelectorAll('.style-preview').forEach(d => d.classList.remove('selected'));
+                div.classList.add('selected');
+                document.getElementById('selectedStyle').value = div.getAttribute('data-style');
+            });
+            if (div.getAttribute('data-style') === 'style1') div.classList.add('selected');
+        });
+    }
+
+    // Inicializace
+    function init() {
+        renderStyleSelector();
+        renderEntriesSelector();
+        renderBooksList();
+        document.getElementById('createBookBtn').addEventListener('click', createBook);
+        document.getElementById('closePreviewBtn').addEventListener('click', () => {
+            document.getElementById('previewModal').classList.add('hidden');
+        });
+    }
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
