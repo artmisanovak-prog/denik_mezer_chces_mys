@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyzátor úhlů – Chceš myš?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f0f0f;
+            color: #e8e0d0;
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            padding: 20px;
+        }
+        .wrap { max-width: 1300px; margin: 0 auto; }
+        header nav {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(168,152,128,0.2);
+            padding-bottom: 12px;
+            margin-bottom: 30px;
+        }
+        .nav-brand em { color: #a89880; font-style: italic; }
+        .nav-links a {
+            color: #a89880;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+        }
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+        }
+        .sub {
+            color: #a89880;
+            margin-bottom: 32px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 30px;
+        }
+        @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+        textarea {
+            width: 100%;
+            background: #1c1c1c;
+            border: 1px solid #2a2a2a;
+            color: #e8e0d0;
+            padding: 14px;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 240px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #e8e0d0;
+            padding: 8px 16px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #3a3a3a;
+            border-color: #a89880;
+        }
+        .wheel-container {
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            padding: 20px;
+            text-align: center;
+        }
+        canvas {
+            width: 100%;
+            max-width: 280px;
+            cursor: pointer;
+        }
+        .results {
+            margin-top: 40px;
+            border-top: 1px solid #2a2a2a;
+            padding-top: 30px;
+        }
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 1px;
+            background: #2a2a2a;
+            border: 1px solid #2a2a2a;
+            margin: 20px 0;
+        }
+        .score-cell {
+            background: #161616;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .score-cell:hover { background: #1f1f1f; }
+        .score-name {
+            font-size: 11px;
+            letter-spacing: 0.05em;
+        }
+        .score-bar {
+            height: 2px;
+            background: #2a2a2a;
+            margin: 6px 0;
+        }
+        .score-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .score-val {
+            font-size: 10px;
+            color: #a89880;
+        }
+        .highlighted-text {
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            padding: 16px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            margin: 20px 0;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .angle-detail {
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .angle-detail.visible { display: block; }
+        .stripes {
+            margin: 20px 0;
+            display: flex;
+            height: 30px;
+            gap: 2px;
+        }
+        .stripe {
+            flex: 1;
+            height: 100%;
+            background: #2a2a2a;
+            position: relative;
+        }
+        .stripe-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+        .stripe-segment {
+            flex: 1;
+            height: 100%;
+        }
+        .figures-list {
+            margin-top: 15px;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        .fig-item {
+            margin-bottom: 16px;
+            border-left: 2px solid transparent;
+            padding-left: 12px;
+        }
+        .fig-name {
+            font-weight: bold;
+            color: inherit;
+            cursor: pointer;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .fig-name:hover {
+            text-decoration: underline;
+        }
+        .fig-desc {
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+        .fig-count {
+            font-size: 10px;
+            color: #a89880;
+        }
+        .highlight-sentence {
+            background-color: rgba(168,152,128,0.25);
+            transition: background 0.1s;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <nav>
+    <span class="nav-brand"><em>Chceš myš?</em> — analyzátor úhlů</span>
+    <div class="nav-links">
+      <a id="exportBtn">⬇ Export JSON</a>
+      <a id="copyBtn">📋 Kopírovat výsledky</a>
+    </div>
+  </nav>
+  <h1>12 úhlů · struktura textu</h1>
+  <div class="sub">Klikni na úhel – zobrazí se figury. Klikni na název figury – zvýrazní se všechny její výskyty v textu.</div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <textarea id="inputText" placeholder="Vlož text – deník, báseň, poznámku..."></textarea>
+    <div class="btn-group">
+      <button id="analyzeBtn">🔍 Analyzovat</button>
+      <button id="clearBtn">🗑 Vymazat</button>
+    </div>
+    <div id="stripes" class="stripes"></div>
+    <div id="highlightedArea" class="highlighted-text">—</div>
+  </div>
+  <div class="wheel-container">
+    <canvas id="wheelCanvas" width="300" height="300"></canvas>
+    <p style="margin-top: 12px; font-size: 10px; color:#666;">kliknutím na segment zobrazíš detail úhlu</p>
+  </div>
+</div>
+
+<div class="results" id="results" style="display:none">
+  <div class="scores-grid" id="scoresGrid"></div>
+  <div class="angle-detail" id="angleDetail">
+    <h3 id="detailTitle" style="font-family: serif; font-size: 1.4rem;"></h3>
+    <p id="detailDesc" style="color:#aaa; margin: 8px 0 12px;"></p>
+    <div id="detailFigures" class="figures-list"></div>
+  </div>
+</div>
+<footer>Procento = podíl slov ve větách obsahujících alespoň jednu figuru daného úhlu. Figury jsou detekovány strukturálně (bez významu).</footer>
+</div>
+
+<script>
+// =============================================
+// 12 ÚHLŮ
+// =============================================
+const ANGLES = [
+  { id:0, deg:0,   name:"Analytický",   color:"#e8c37b", desc:"Struktury, výčty, dlouhé věty, fixace." },
+  { id:1, deg:30,  name:"Kulturní",     color:"#6a9e72", desc:"Minulý čas, paraboly, kulturní odkazy." },
+  { id:2, deg:60,  name:"Filozofický",  color:"#9b72b5", desc:"Otázky, metatext, deklarace, paradox." },
+  { id:3, deg:90,  name:"Naivní",       color:"#5fa8a0", desc:"Elipsa, komprese, nerozhodnost." },
+  { id:4, deg:120, name:"Jazykový",     color:"#8e7248", desc:"Anafora, aliterace, rytmus, onomatopoeia." },
+  { id:5, deg:150, name:"Metaforický",  color:"#5a8a5a", desc:"Metafora, přirovnání, apostrofa, personifikace." },
+  { id:6, deg:180, name:"Asociační",    color:"#a85a5a", desc:"Fragmenty, výčty, vykřičníky." },
+  { id:7, deg:210, name:"Introspektivní",color:"#c8a832", desc:"1.osoba, smyslové detaily, změna tempa." },
+  { id:8, deg:240, name:"Ironický",     color:"#c8722a", desc:"Negace, kontrast, ironické struktury." },
+  { id:9, deg:270, name:"Groteskní",    color:"#a83060", desc:"Hyperbola, gradace, vykřičník." },
+  { id:10,deg:300, name:"Absurdní",     color:"#6080a0", desc:"Aposiopeze, synestezie, personifikace, oxymóron." },
+  { id:11,deg:330, name:"Surrealistický",color:"#8060b0", desc:"Asyndeton, snová slova, prolínání." }
+];
+
+// =============================================
+// FIGURY (80+)
+// Každá figura: angleId, name, description, detect (funkce vracející true/false pro větu)
+// =============================================
+const FIGURES = [
+  // Analytický (0)
+  { angleId:0, name:"Dlouhá věta", desc:"Věta delší než 20 slov.", detect:s=>s.split(/\s+/).length>20 },
+  { angleId:0, name:"Polysyndeton", desc:"Nadměrné užívání spojek (a, i, ani, nebo, ale).", detect:s=>(s.match(/\b(a|i|ani|nebo|ale)\b/gi)||[]).length>=3 },
+  { angleId:0, name:"Apoziční definice", desc:"Vložená definice oddělená čárkami.", detect:s=>/,\s*(\w+)\s*,/.test(s) },
+  { angleId:0, name:"Fixace slova", desc:"Opakování stejného slova v textu (makro).", detect:(s,fullText)=>null }, // makro, řešeno zvlášť
+  // Kulturní (1)
+  { angleId:1, name:"Minulý čas (bez 1.os.)", desc:"Slovesa v minulém čase, ne první osoba.", detect:s=>/\b\w+(l|la|lo|li|ly)\b/i.test(s) && !/\b(jsem|jsem byl)\b/i.test(s) },
+  { angleId:1, name:"Parabola", desc:"Podobenství, poučný příběh.", detect:s=>/jako\s+\w+\s+v\s+|příběh\s+o|bajka/i.test(s) },
+  { angleId:1, name:"Kulturní odkaz", desc:"Zmínka o tradici, dějinách, rituálu.", detect:s=>/\b(tradice|kultura|dějiny|minulost|archetyp|symbol|rituál)\b/i.test(s) },
+  // Filozofický (2)
+  { angleId:2, name:"Metatext", desc:"Text o textu (píšu, tato věta).", detect:s=>/\b(tento text|píšu|říkám to|jazyk sám)\b/i.test(s) },
+  { angleId:2, name:"Otázka", desc:"Tázací věta (ne v přímé řeči).", detect:s=>s.trim().endsWith('?') && !/„[^"]*\?/.test(s) },
+  { angleId:2, name:"Paradox", desc:"Spojení protichůdných tvrzení (2× být bez ale).", detect:s=>(s.match(/\b(je|jsou|byl|byla)\b/gi)||[]).length>=2 && !/\bale\b/i.test(s) },
+  { angleId:2, name:"Deklarace", desc:"Tvrzení ustavující skutečnost (pravda je...).", detect:s=>/^(Je|Jsou|Pravda je)\b/i.test(s) },
+  // Naivní (3)
+  { angleId:3, name:"Elipsa (bez slovesa)", desc:"Věta bez slovesa.", detect:s=>!/\b(jsem|jsi|je|jsme|jsou|byl|byla|mám|jdu|stojí|leží|sedí|spí)\b/i.test(s) && s.split(/\s+/).length>1 },
+  { angleId:3, name:"Nerozhodnost", desc:"Slova vyjadřující nejistotu (možná, snad).", detect:s=>/\b(možná|snad|nevím|asi|jaksi|prostě|vlastně)\b/i.test(s) },
+  { angleId:3, name:"Přímá řeč", desc:"Citace v uvozovkách.", detect:s=>/„[^"]+"|"[^"]+"/i.test(s) },
+  { angleId:3, name:"Komprese", desc:"Velmi krátká věta (do 5 slov) se slovesem.", detect:s=>s.split(/\s+/).length<=5 && /\b(jsem|jsi|je|jsou|byl|mám|jdu)\b/i.test(s) },
+  // Jazykový (4)
+  { angleId:4, name:"Onomatopoeia", desc:"Zvukomalba (bum, šum, cink).", detect:s=>/\b(bum|prásk|šum|hučení|šelest|cink|vrz|šepot|bzučení)\b/i.test(s) },
+  { angleId:4, name:"Aliterace", desc:"Opakování stejné počáteční hlásky v sousedních slovech.", detect:s=>{ let w=s.split(/\s+/).filter(w=>w.length>0); for(let i=2;i<w.length;i++) if(w[i][0].toLowerCase()===w[i-1][0].toLowerCase()&&w[i-1][0].toLowerCase()===w[i-2][0].toLowerCase()) return true; return false; } },
+  { angleId:4, name:"Anafora", desc:"Opakování stejného slova na začátku vět (makro).", detect:(s,fullText,sentences)=>null },
+  { angleId:4, name:"Epifora", desc:"Opakování stejného slova na konci vět (makro).", detect:(s,fullText,sentences)=>null },
+  { angleId:4, name:"Rytmika", desc:"Pravidelný rytmus vět (podobná délka).", detect:(s,fullText,sentences)=>null },
+  // Metaforický (5)
+  { angleId:5, name:"Metafora", desc:"Přenos významu (X je Y).", detect:s=>/\b(\w+)\s+(je|jsou|byl|byla)\s+(\w+)\b/i.test(s) && !/\b(já|ty|on|ona|my|vy)\b/i.test(s) },
+  { angleId:5, name:"Přirovnání", desc:"Srovnání pomocí jako, podobně jako.", detect:s=>/\b(jako|podobně jako|připomíná)\b/i.test(s) },
+  { angleId:5, name:"Apostrofa", desc:"Oslovení nepřítomného (ó, ach, hej).", detect:s=>/\b(ó|ach|hej|poslyš|pohleď)\b/i.test(s) },
+  { angleId:5, name:"Personifikace", desc:"Lidské vlastnosti neživému (ticho řeklo).", detect:s=>/\b(ticho|čas|světlo|tma|myšlenka|slovo|vítr|voda)\b.*\b(řekl|říká|myslí|cítí|ví|chce|volá|pláče)\b/i.test(s) },
+  // Asociační (6)
+  { angleId:6, name:"Fragment", desc:"Neúplná věta (bez slovesa, ale s obsahem).", detect:s=>!/\b(jsem|jsi|je|jsme|jsou|byl|byla|bylo|mám|jdu|stojí|leží)\b/i.test(s) && s.split(/\s+/).length>1 },
+  { angleId:6, name:"Enumerace", desc:"Výčet oddělený čárkami (3+).", detect:s=>(s.match(/,/g)||[]).length>=2 },
+  { angleId:6, name:"Vykřičník", desc:"Zvolání.", detect:s=>s.includes('!') },
+  { angleId:6, name:"Číslovka/číslice", desc:"Číselný údaj.", detect:s=>/\b\d+\b/.test(s) },
+  // Introspektivní (7)
+  { angleId:7, name:"1. osoba j.č.", desc:"Já, jsem, mě, mi, můj.", detect:s=>/\b(já|jsem|mě|mi|můj|moje|mám|říkám|vím|cítím)\b/i.test(s) },
+  { angleId:7, name:"Smyslový detail", desc:"Barvy, teploty, textury, chutě.", detect:s=>/\b(červen|modr|zelen|žlut|teplý|studený|hladký|hrubý|sladký|hořký|tmavý|světlý)\b/i.test(s) },
+  { angleId:7, name:"Změna tempa", desc:"Velké kolísání délky vět (makro).", detect:(s,fullText,sentences)=>null },
+  // Ironický (8)
+  { angleId:8, name:"Negace", desc:"Dva a více záporů ve větě.", detect:s=>(s.match(/\b(ne|ni|bez|nikdy|nic|není|nemá|nemohu|nechce)\b/gi)||[]).length>=2 },
+  { angleId:8, name:"Ironie (2× být + ale)", desc:"Struktura 'X je Y, ale...'", detect:s=>(s.match(/\b(je|jsou|byl|byla)\b/gi)||[]).length>=2 && /\b(ale|přesto|však)\b/i.test(s) },
+  { angleId:8, name:"Kontrast vět", desc:"Protikladné věty za sebou (makro).", detect:(s,fullText,sentences)=>null },
+  // Groteskní (9)
+  { angleId:9, name:"Hyperbola", desc:"Nadsázka (naprosto, absolutně, tisíckrát).", detect:s=>/\b(naprosto|absolutně|totálně|nejvíc|stoprocentně|tisíckrát|milionkrát)\b/i.test(s) },
+  { angleId:9, name:"Tautologie", desc:"Opakování stejného slova bezprostředně.", detect:s=>{ let w=s.toLowerCase().split(/\s+/).map(w=>w.replace(/[.,!?;]/g,'')); for(let i=1;i<w.length;i++) if(w[i]===w[i-1] && w[i].length>2) return true; return false; } },
+  { angleId:9, name:"Gradace délek vět", desc:"Postupné prodlužování/zkracování vět (makro).", detect:(s,fullText,sentences)=>null },
+  // Absurdní (10)
+  { angleId:10, name:"Aposiopeze", desc:"Nedokončená věta (… nebo ---).", detect:s=>/\.\.\.|…/.test(s) },
+  { angleId:10, name:"Synestezie", desc:"Smísení smyslů (teplá barva).", detect:s=>/\b(teplá\s+barva|studená\s+vůně|horká\s+tma|sladký\s+zvuk|hořké\s+světlo)\b/i.test(s) },
+  { angleId:10, name:"Oxymóron", desc:"Protikladná slova dohromady (živá smrt).", detect:s=>/\b(živá\s+smrt|sladká\s+bolest|hlučné\s+ticho)\b/i.test(s) },
+  // Surrealistický (11)
+  { angleId:11, name:"Výplňová slova", desc:"Vlastně, jaksi, prostě, no.", detect:s=>/\b(vlastně|jaksi|prostě|no|tedy|takže|víš|ehm)\b/i.test(s) },
+  { angleId:11, name:"Snová slova", desc:"Sen, snový, zdálo se.", detect:s=>/\b(sen|snový|zdálo|snil|noční|spánek|přisnil)\b/i.test(s) },
+  { angleId:11, name:"Prolínání míst a časů", desc:"Zde a teď, tam a tehdy dohromady.", detect:s=>/\b(tady|tam|zde|venku|uvnitř)\b.*\b(dnes|včera|zítra|teď|nyní)\b/i.test(s) },
+  { angleId:11, name:"Asyndeton", desc:"Vynechávání spojek v krátkých větách (makro).", detect:(s,fullText,sentences)=>null }
+];
+
+// Makro figury (globální) – detekují se z celého textu, nejsou součástí procentuálního pokrytí, ale zobrazí se v detailu
+const MACRO_FIGURES = [
+  { angleId:0, name:"Fixace slova", desc:"Stejné slovo se opakuje 3+× v textu.", detect:(fullText,sentences)=>{ const words=fullText.split(/\s+/); let freq={}; words.forEach(w=>{ let ww=w.toLowerCase().replace(/[.,!?;]/g,''); if(ww.length>3) freq[ww]=(freq[ww]||0)+1; }); return Object.values(freq).some(c=>c>=3); } },
+  { angleId:1, name:"Změna role (zájmen)", desc:"Střídání já/ty/my/vy v textu.", detect:(fullText,sentences)=>{ let roles=new Set(); sentences.forEach(s=>{ if(/\bjá\b|\bjsem\b/i.test(s)) roles.add('já'); if(/\bty\b|\bvy\b/i.test(s)) roles.add('ty/vy'); }); return roles.size>=2; } },
+  { angleId:4, name:"Anafora", desc:"Stejný začátek alespoň 2 po sobě jdoucích vět.", detect:(fullText,sentences)=>{ for(let i=1;i<sentences.length;i++){ let w1=sentences[i-1].trim().split(/\s+/)[0]; let w2=sentences[i].trim().split(/\s+/)[0]; if(w1&&w2&&w1.toLowerCase()===w2.toLowerCase()) return true; } return false; } },
+  { angleId:4, name:"Epifora", desc:"Stejný konec alespoň 2 po sobě jdoucích vět.", detect:(fullText,sentences)=>{ for(let i=1;i<sentences.length;i++){ let w1=sentences[i-1].trim().split(/\s+/).pop(); let w2=sentences[i].trim().split(/\s+/).pop(); if(w1&&w2&&w1.toLowerCase()===w2.toLowerCase()) return true; } return false; } },
+  { angleId:4, name:"Rytmika", desc:"Malá odchylka v délkách vět (variance <2).", detect:(fullText,sentences)=>{ let lens=sentences.map(s=>s.split(/\s+/).length); if(lens.length<3) return false; let avg=lens.reduce((a,b)=>a+b,0)/lens.length; let varianz=lens.map(l=>Math.pow(l-avg,2)).reduce((a,b)=>a+b,0)/lens.length; return varianz<2; } },
+  { angleId:7, name:"Změna tempa", desc:"Maximální délka věty je 3× větší než minimální.", detect:(fullText,sentences)=>{ let lens=sentences.map(s=>s.split(/\s+/).length); if(lens.length<3) return false; let max=Math.max(...lens), min=Math.min(...lens); return max/min>=3; } },
+  { angleId:8, name:"Kontrast vět", desc:"Protikladné věty za sebou (pozitivní vs negativní).", detect:(fullText,sentences)=>{ let pos=/\b(krásný|dobrý|šťastný|radost|úspěch|láska|naděje)\b/i; let neg=/\b(ošklivý|špatný|smutný|smutek|neúspěch|nenávist|beznaděj)\b/i; for(let i=1;i<sentences.length;i++) if((pos.test(sentences[i-1])&&neg.test(sentences[i]))||(neg.test(sentences[i-1])&&pos.test(sentences[i]))) return true; return false; } },
+  { angleId:9, name:"Gradace délek vět", desc:"Postupné prodlužování nebo zkracování vět (3+).", detect:(fullText,sentences)=>{ let lens=sentences.map(s=>s.split(/\s+/).length); let inc=0, dec=0; for(let i=2;i<lens.length;i++){ if(lens[i]>lens[i-1]&&lens[i-1]>lens[i-2]) inc++; if(lens[i]<lens[i-1]&&lens[i-1]<lens[i-2]) dec++; } return inc>=2 || dec>=2; } },
+  { angleId:11, name:"Asyndeton", desc:"3+ krátké věty bez spojky za sebou.", detect:(fullText,sentences)=>{ let shortNoConn=0; sentences.forEach(s=>{ if(s.split(/\s+/).length<=6 && !/^(a|nebo|ale|i)\b/i.test(s.trim())) shortNoConn++; }); return shortNoConn>=3; } }
+];
+
+// =============================================
+// Pomocné funkce
+// =============================================
+function splitSentences(text) {
+    return text.split(/(?<=[.!?])\s+|\n(?=\S)/).map(s=>s.trim()).filter(s=>s.length>1);
+}
+
+// Pro každou větu zjistíme, které figury (mikro) se v ní vyskytují
+function analyzeText(text) {
+    const sentences = splitSentences(text);
+    const totalWords = text.split(/\s+/).length;
+    const sentenceData = sentences.map((sentence, idx) => {
+        const figuresFound = [];
+        FIGURES.forEach(fig => {
+            if(fig.detect && typeof fig.detect === 'function') {
+                try {
+                    // Pro mikro figury voláme s větou
+                    if(fig.detect(sentence)) {
+                        figuresFound.push({ name: fig.name, angleId: fig.angleId, desc: fig.desc });
+                    }
+                } catch(e) {}
+            }
+        });
+        const uniqueAngles = [...new Set(figuresFound.map(f => f.angleId))];
+        return { sentence, idx, figuresFound, uniqueAngles, words: sentence.split(/\s+/).length };
+    });
+
+    // Procento úhlů: podíl slov ve větách, které obsahují alespoň jednu figuru daného úhlu
+    const angleCoverage = ANGLES.map(angle => {
+        let wordCount = 0;
+        sentenceData.forEach(sd => {
+            if(sd.uniqueAngles.includes(angle.id)) {
+                wordCount += sd.words;
+            }
+        });
+        let percent = totalWords > 0 ? Math.round((wordCount / totalWords) * 100) : 0;
+        return { angle, percent, wordCount };
+    });
+
+    // Makro figury
+    const macroFigsDetected = [];
+    MACRO_FIGURES.forEach(fig => {
+        try {
+            if(fig.detect(text, sentences)) {
+                macroFigsDetected.push({ name: fig.name, desc: fig.desc, angleId: fig.angleId });
+            }
+        } catch(e) {}
+    });
+
+    // Pro každý úhel seskupit figury (mikro i makro) a spočítat výskyty
+    const angleFigures = ANGLES.map(angle => {
+        const microFigs = [];
+        const macroFigs = [];
+        // mikro figury: spočítáme počet výskytů (vět)
+        FIGURES.forEach(fig => {
+            if(fig.angleId === angle.id && fig.detect && typeof fig.detect === 'function') {
+                let occurrences = 0;
+                sentenceData.forEach(sd => {
+                    if(sd.figuresFound.some(f => f.name === fig.name)) occurrences++;
+                });
+                if(occurrences > 0) {
+                    microFigs.push({ ...fig, occurrences });
+                }
+            }
+        });
+        // makro figury
+        macroFigsDetected.forEach(mf => {
+            if(mf.angleId === angle.id) {
+                macroFigs.push({ name: mf.name, desc: mf.desc, occurrences: 1, isMacro: true });
+            }
+        });
+        return { angle, microFigs, macroFigs };
+    });
+
+    return { text, sentences, sentenceData, totalWords, angleCoverage, angleFigures };
+}
+
+// =============================================
+// Globální proměnné
+// =============================================
+let lastAnalysis = null;
+let currentHighlightFigure = null; // název figury, která je právě zvýrazněna
+
+// Zvýrazní všechny výskyty dané figury v textu (podbarvením vět)
+function highlightFigure(figureName, angleColor) {
+    if(!lastAnalysis) return;
+    const { sentenceData } = lastAnalysis;
+    // Najdeme všechny věty, které obsahují tuto figuru
+    const sentenceIndices = [];
+    sentenceData.forEach((sd, idx) => {
+        if(sd.figuresFound.some(f => f.name === figureName)) {
+            sentenceIndices.push(idx);
+        }
+    });
+    // Zvýraznění v HTML
+    const parts = lastAnalysis.text.split(/(?<=[.!?])\s+/);
+    let newHtml = '';
+    parts.forEach((part, idx) => {
+        if(sentenceIndices.includes(idx)) {
+            newHtml += `<span class="highlight-sentence" style="background-color:${angleColor}40; padding:0 2px;">${part}</span> `;
+        } else {
+            newHtml += part + ' ';
+        }
+    });
+    document.getElementById('highlightedArea').innerHTML = newHtml;
+    currentHighlightFigure = figureName;
+}
+
+// Zobrazení detailu úhlu (seznam figur)
+function showAngleDetail(angleId) {
+    const angle = ANGLES.find(a=>a.id===angleId);
+    if(!angle) return;
+    const angleFig = lastAnalysis.angleFigures.find(af => af.angle.id === angleId);
+    if(!angleFig) return;
+
+    const detailDiv = document.getElementById('angleDetail');
+    detailDiv.classList.add('visible');
+    document.getElementById('detailTitle').innerHTML = `<span style="color:${angle.color}">${angle.deg}° ${angle.name}</span>`;
+    document.getElementById('detailDesc').innerText = angle.desc;
+
+    let html = '<div class="figures-list">';
+    // Mikro figury
+    if(angleFig.microFigs.length === 0 && angleFig.macroFigs.length === 0) {
+        html += '<p>Žádné figury tohoto úhlu nebyly v textu nalezeny.</p>';
+    } else {
+        if(angleFig.microFigs.length > 0) {
+            html += '<div><strong>Figury nalezené v textu (klikni na název pro zvýraznění):</strong></div>';
+            angleFig.microFigs.forEach(fig => {
+                html += `
+                    <div class="fig-item" data-figure-name="${fig.name}" data-angle-color="${angle.color}">
+                        <div class="fig-name" style="color:${angle.color};">▼ ${fig.name}</div>
+                        <div class="fig-desc">${fig.desc}</div>
+                        <div class="fig-count">${fig.occurrences} výskytů</div>
+                    </div>
+                `;
+            });
+        }
+        if(angleFig.macroFigs.length > 0) {
+            html += '<div style="margin-top:15px;"><strong>Makro figury (globální):</strong></div>';
+            angleFig.macroFigs.forEach(fig => {
+                html += `
+                    <div class="fig-item" data-figure-name="${fig.name}" data-angle-color="${angle.color}">
+                        <div class="fig-name" style="color:${angle.color};">▼ ${fig.name}</div>
+                        <div class="fig-desc">${fig.desc}</div>
+                        <div class="fig-count">(globální výskyt)</div>
+                    </div>
+                `;
+            });
+        }
+    }
+    html += '</div>';
+    document.getElementById('detailFigures').innerHTML = html;
+
+    // Přidání eventů pro klikání na figury (na celý .fig-item, ale reakce na jméno)
+    document.querySelectorAll('.fig-item').forEach(item => {
+        const figName = item.getAttribute('data-figure-name');
+        const angleColor = item.getAttribute('data-angle-color');
+        const figNameDiv = item.querySelector('.fig-name');
+        if(figNameDiv) {
+            figNameDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                highlightFigure(figName, angleColor);
+            });
+        }
+    });
+}
+
+// =============================================
+// Zobrazení výsledků
+// =============================================
+function displayResults(analysis) {
+    const { angleCoverage, angleFigures } = analysis;
+    document.getElementById('results').style.display = 'block';
+    const grid = document.getElementById('scoresGrid');
+    grid.innerHTML = '';
+    angleCoverage.forEach(sc => {
+        const cell = document.createElement('div');
+        cell.className = 'score-cell';
+        cell.style.borderLeft = `3px solid ${sc.angle.color}`;
+        cell.innerHTML = `
+            <div class="score-name">${sc.angle.deg}° ${sc.angle.name}</div>
+            <div class="score-bar"><div class="score-fill" style="background:${sc.angle.color}; width:${sc.percent}%"></div></div>
+            <div class="score-val">${sc.percent}%</div>
+        `;
+        cell.onclick = () => showAngleDetail(sc.angle.id);
+        grid.appendChild(cell);
+    });
+
+    // Stripes (barevné proužky)
+    const stripesDiv = document.getElementById('stripes');
+    stripesDiv.innerHTML = '';
+    analysis.sentenceData.forEach(sd => {
+        const stripe = document.createElement('div');
+        stripe.className = 'stripe';
+        if(sd.uniqueAngles.length === 0) {
+            stripe.style.background = '#2a2a2a';
+        } else {
+            const inner = document.createElement('div');
+            inner.className = 'stripe-inner';
+            sd.uniqueAngles.forEach(angleId => {
+                const angle = ANGLES.find(a=>a.id===angleId);
+                const seg = document.createElement('div');
+                seg.className = 'stripe-segment';
+                seg.style.background = angle.color;
+                seg.style.opacity = '0.7';
+                seg.title = angle.name;
+                inner.appendChild(seg);
+            });
+            stripe.appendChild(inner);
+        }
+        stripesDiv.appendChild(stripe);
+    });
+
+    // Zvýraznění textu – základ (žádné zvýraznění)
+    document.getElementById('highlightedArea').innerHTML = analysis.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+}
+
+// =============================================
+// Hlavní analýza
+// =============================================
+function analyze() {
+    const text = document.getElementById('inputText').value.trim();
+    if(!text) return;
+    const analysis = analyzeText(text);
+    lastAnalysis = analysis;
+    displayResults(analysis);
+    // Zobrazit detail prvního úhlu
+    if(analysis.angleCoverage.length) {
+        showAngleDetail(analysis.angleCoverage[0].angle.id);
+    }
+    // Klikání na kolečko
+    drawWheel(analysis.angleCoverage);
+}
+
+function drawWheel(angleCoverage) {
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const w=300, h=300, cx=150, cy=150, rOuter=120, rInner=40;
+    ctx.clearRect(0,0,w,h);
+    const angleStep = Math.PI*2 / ANGLES.length;
+    ANGLES.forEach((angle, i) => {
+        let start = -Math.PI/2 + i*angleStep;
+        let end = start + angleStep;
+        let pct = angleCoverage[i].percent / 100;
+        let rFill = rInner + (rOuter - rInner) * pct;
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,rOuter,start,end); ctx.closePath();
+        ctx.fillStyle = angle.color+'20'; ctx.fill();
+        ctx.strokeStyle = '#2a2a2a'; ctx.stroke();
+        if(pct>0){
+            ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,rFill,start,end); ctx.closePath();
+            ctx.fillStyle = angle.color + (pct>0.5?'c0':'80'); ctx.fill();
+        }
+        let mid = start + angleStep/2;
+        let rad = rOuter + 10;
+        let x = cx + Math.cos(mid)*rad, y = cy + Math.sin(mid)*rad;
+        ctx.fillStyle = pct>0 ? angle.color : '#555';
+        ctx.font = 'bold 9px "DM Mono"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(angle.deg+'°', x, y);
+    });
+    ctx.beginPath(); ctx.arc(cx,cy,rInner-2,0,Math.PI*2); ctx.fillStyle='#0f0f0f'; ctx.fill();
+    ctx.fillStyle='#e8e0d0'; ctx.font='10px monospace'; ctx.fillText('12', cx, cy+3);
+}
+
+function exportJSON() {
+    if(!lastAnalysis) return;
+    const data = {
+        timestamp: new Date().toISOString(),
+        text: lastAnalysis.text,
+        totalWords: lastAnalysis.totalWords,
+        angles: lastAnalysis.angleCoverage.map(sc => ({
+            name: sc.angle.name,
+            deg: sc.angle.deg,
+            percent: sc.percent,
+            wordCoverage: sc.wordCount
+        })),
+        figures: lastAnalysis.angleFigures.map(af => ({
+            angle: af.angle.name,
+            figures: af.microFigs.map(f => ({ name: f.name, occurrences: f.occurrences }))
+        }))
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `analyza_${new Date().toISOString().slice(0,19)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function copyResults() {
+    if(!lastAnalysis) return;
+    let out = `ANALÝZA TEXTU\nSlov: ${lastAnalysis.totalWords}\n`;
+    lastAnalysis.angleCoverage.forEach(sc => {
+        out += `${sc.angle.deg}° ${sc.angle.name}: ${sc.percent}% (${sc.wordCount} slov)\n`;
+    });
+    navigator.clipboard.writeText(out);
+    alert('Zkopírováno do schránky');
+}
+
+// Eventy
+document.getElementById('analyzeBtn').addEventListener('click', analyze);
+document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('inputText').value = '';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('highlightedArea').innerHTML = '—';
+    document.getElementById('stripes').innerHTML = '';
+    document.getElementById('angleDetail').classList.remove('visible');
+    lastAnalysis = null;
+});
+document.getElementById('exportBtn').addEventListener('click', (e)=>{ e.preventDefault(); exportJSON(); });
+document.getElementById('copyBtn').addEventListener('click', (e)=>{ e.preventDefault(); copyResults(); });
+document.getElementById('wheelCanvas').addEventListener('click', (e) => {
+    if(!lastAnalysis) return;
+    const rect = e.target.getBoundingClientRect();
+    const scale = 300/rect.width;
+    const mx = (e.clientX - rect.left)*scale - 150;
+    const my = (e.clientY - rect.top)*scale - 150;
+    let angleRad = Math.atan2(my, mx) + Math.PI/2;
+    if(angleRad<0) angleRad += 2*Math.PI;
+    const idx = Math.floor(angleRad / (Math.PI*2/12));
+    if(idx>=0 && idx<ANGLES.length) showAngleDetail(ANGLES[idx].id);
+});
+</script>
+</body>
+</html>
