@@ -13,3 +13,12 @@
 
 - [karty](doma/data/karty.json)
 - [ikonka](doma/ilustrace/mys_ikonka.png)
+
+---
+
+- [křivá pohádka - myš](doma/data/kriva_pohadka/mys.txt)
+- [křivá pohádka - kocour](doma/data/kriva_pohadka/kocour.txt)
+- [křivá pohádka - ryba](doma/data/kriva_pohadka/ryba.txt)
+- [křivá pohádka - zaječice](doma/data/kriva_pohadka/zajic.txt)
+- [křivá pohádka - žralok](doma/data/kriva_pohadka/zralok.txt)
+
