@@ -4,6 +4,7 @@
 
 - [zápisník](doma/nastroje/zapisnik.html)
 - [analyzér](doma/nastroje/analyzer_60.html)
+- [analyzer](doma/nastroje/analyzer.html)
 
 ---
 
