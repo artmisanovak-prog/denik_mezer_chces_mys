@@ -6,6 +6,8 @@
 - [analyzér 60](doma/nastroje/analyzer_60.html)
 - [analyzer](doma/nastroje/analyzer.html)
 - [knizka](doma/nastroje/knizka.html)
+- [zapisnik_v2](doma/nastroje/zapisnik_v2.html)
+- [knihovna fenoménů](doma/nastroje/knihovna_fenomenu.html)
 
 ---
 
